@@ -1,59 +1,102 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import Dashboard from './pages/Dashboard';
-import Operations from './pages/Operations';
-import Products from './pages/Products';
+import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
 
-// Left Navigation Sidebar Component
-function Navbar() {
+// Navigation Components
+import Navbar from './components/Navbar';
+import Header from './components/Header';
+import ProfileModal from './components/ProfileModal';
+
+// Pages
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import Products from './pages/Products';
+import Receipts from './pages/Receipts';
+import Deliveries from './pages/Deliveries';
+import Transfers from './pages/Transfers';
+import Adjustments from './pages/Adjustments';
+import MoveHistory from './pages/MoveHistory';
+import Warehouses from './pages/Warehouses';
+import Locations from './pages/Locations';
+import Categories from './pages/Categories';
+
+// Route Titles Mapping
+const pageTitles = {
+  '/': 'Inventory Operations Dashboard',
+  '/products': 'Product Master Catalog & Stock',
+  '/receipts': 'Incoming Goods Receipts (Vendor -> Warehouse)',
+  '/deliveries': 'Outgoing Delivery Orders (Warehouse -> Customer)',
+  '/transfers': 'Internal Transfers (Warehouse -> Rack)',
+  '/adjustments': 'Physical Inventory Count & Adjustments',
+  '/moves': 'Stock Ledger & Complete Move History',
+  '/warehouses': 'Warehouse Facilities Setup',
+  '/locations': 'Storage Locations & Virtual Zones',
+  '/categories': 'Product Classification Categories',
+};
+
+// Protected App Layout Wrapper
+function AppLayout() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const location = useLocation();
+
+  const currentTitle = pageTitles[location.pathname] || 'StockSense IMS';
+
   return (
-    <div style={{
-      width: '240px',
-      background: '#0f172a',
-      color: '#ffffff',
-      minHeight: '100vh',
-      padding: '24px 16px',
-      boxSizing: 'border-box'
-    }}>
-      <h2 style={{ fontSize: '20px', margin: '0 0 20px 0', fontWeight: 'bold' }}>StockSense</h2>
-      <hr style={{ borderColor: '#334155', margin: '0 0 20px 0' }} />
-      <nav>
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <li>
-            <Link to="/" style={{ color: '#e2e8f0', textDecoration: 'none', display: 'block', padding: '10px', borderRadius: '6px' }}>
-              📊 Dashboard
-            </Link>
-          </li>
-          <li>
-            <Link to="/products" style={{ color: '#e2e8f0', textDecoration: 'none', display: 'block', padding: '10px', borderRadius: '6px' }}>
-              📦 Products
-            </Link>
-          </li>
-          <li>
-            <Link to="/operations" style={{ color: '#e2e8f0', textDecoration: 'none', display: 'block', padding: '10px', borderRadius: '6px' }}>
-              ⚙️ Operations
-            </Link>
-          </li>
-        </ul>
-      </nav>
+    <div className="app-container">
+      <Navbar 
+        isOpen={mobileMenuOpen} 
+        onClose={() => setMobileMenuOpen(false)} 
+        onOpenProfile={() => setProfileOpen(true)}
+      />
+
+      <div className="main-wrapper">
+        <Header 
+          title={currentTitle} 
+          onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)}
+          onOpenProfile={() => setProfileOpen(true)}
+          onRefreshData={() => window.location.reload()}
+        />
+
+        <main className="content-area">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/products" element={<Products />} />
+            <Route path="/receipts" element={<Receipts />} />
+            <Route path="/deliveries" element={<Deliveries />} />
+            <Route path="/transfers" element={<Transfers />} />
+            <Route path="/adjustments" element={<Adjustments />} />
+            <Route path="/moves" element={<MoveHistory />} />
+            <Route path="/operations" element={<Navigate to="/moves" replace />} />
+            <Route path="/warehouses" element={<Warehouses />} />
+            <Route path="/locations" element={<Locations />} />
+            <Route path="/categories" element={<Categories />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </main>
+      </div>
+
+      <ProfileModal 
+        isOpen={profileOpen} 
+        onClose={() => setProfileOpen(false)} 
+      />
     </div>
   );
 }
 
-// Root Routing App
 export default function App() {
   return (
-    <Router>
-      <div style={{ display: 'flex', minHeight: '100vh', width: '100vw', backgroundColor: '#f8fafc', fontFamily: 'sans-serif' }}>
-        <Navbar />
-        <main style={{ flex: 1, padding: '32px', overflowY: 'auto' }}>
+    <AuthProvider>
+      <ToastProvider>
+        <Router>
           <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/products" element={<Products />} />
-            <Route path="/operations" element={<Operations />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Login />} />
+            <Route path="/*" element={<AppLayout />} />
           </Routes>
-        </main>
-      </div>
-    </Router>
+        </Router>
+      </ToastProvider>
+    </AuthProvider>
   );
 }
